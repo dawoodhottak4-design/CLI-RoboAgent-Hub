@@ -1,7 +1,6 @@
 import os
 from langchain_openai import ChatOpenAI
-from langchain.agents import AgentExecutor, create_openai_tools_agent
-from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain.agents import initialize_agent, AgentType
 from langchain_community.tools import DuckDuckGoSearchRun
 
 def get_groq_llm():
@@ -17,23 +16,26 @@ def run_robotics_consultation(age_group, user_query):
     llm = get_groq_llm()
     search = DuckDuckGoSearchRun()
     
-    # Prompt defining the CLI Robotic School DHA Quetta expertise
-    prompt = ChatPromptTemplate.from_messages([
-        ("system", f"""You are an expert multi-agent AI educational system for CLI Robotic School DHA Quetta. 
-        You specialize in the curriculum from Ages 3 to 16 (ranging from tactile play-based logic to Python, C++, and Computer Vision).
-        The current student/teacher target level is: {age_group}.
-        Provide a comprehensive, structured response covering:
-        1. Curriculum & Pedagogical Approach
-        2. Coding / Technical Instructions (Block coding, Python, or C++ snippets where applicable)
-        3. Hardware, Sensors & Project Guidance
-        Use web search if needed to verify technical details."""),
-        ("user", "{input}"),
-        MessagesPlaceholder(variable_name="agent_scratchpad"),
-    ])
+    # Define System Prompt
+    system_instruction = f"""
+    You are an expert multi-agent AI educational system for CLI Robotic School DHA Quetta.
+    Target Student Age Group: {age_group}.
     
-    tools = [search]
-    agent = create_openai_tools_agent(llm, tools, prompt)
-    agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
+    Provide a detailed, structured response based on the syllabus:
+    1. Curriculum Breakdown & Pedagogical Method
+    2. Coding / Technical Steps (Block coding or Python/C++ code)
+    3. Hardware, Sensors & Project Guidance
+    """
     
-    response = agent_executor.invoke({"input": user_query})
-    return response["output"]
+    full_query = f"{system_instruction}\n\nUser Question: {user_query}"
+    
+    # Initialize Agent using standard execution pipeline
+    agent = initialize_agent(
+        tools=[search],
+        llm=llm,
+        agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+        verbose=True
+    )
+    
+    response = agent.run(full_query)
+    return response
