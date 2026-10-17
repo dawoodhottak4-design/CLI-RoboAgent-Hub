@@ -1,10 +1,7 @@
 import streamlit as st
 import os
-from crewai import Crew, Process
-from agents import create_robotics_agents
-from multiprocessing import Queue
+from agents import run_robotics_consultation
 
-# Streamlit Page Config
 st.set_page_config(
     page_title="CLI RoboAgent Hub | DHA Quetta",
     page_icon="🤖",
@@ -17,7 +14,6 @@ st.markdown("### Multi-Agent Educational & Robotics Assistant (Beginner to Advan
 # Sidebar for Configuration & Age Group selection
 st.sidebar.header("⚙️ Configuration & Navigation")
 
-# Load API Key securely from Streamlit Secrets
 groq_api_key = None
 if "GROQ_API_KEY" in st.secrets:
     groq_api_key = st.secrets["GROQ_API_KEY"]
@@ -27,9 +23,8 @@ else:
 if groq_api_key:
     os.environ["GROQ_API_KEY"] = groq_api_key
 else:
-    st.warning("⚠️ Please provide your Groq API Key in Streamlit Secrets or sidebar to run the agents.")
+    st.warning("⚠️ Please provide your Groq API Key in Streamlit Secrets or sidebar.")
 
-# Age Group Selection mapped with CLI Robotic School Syllabus
 age_group = st.sidebar.selectbox(
     "Select Student Age Group / Level:",
     [
@@ -41,38 +36,22 @@ age_group = st.sidebar.selectbox(
     ]
 )
 
-# Main Query Input
 user_query = st.text_area(
     "What would you like to learn, build, or teach today?",
-    placeholder="e.g., Create a lesson plan and Python code for a line-following autonomous robot using ultrasonic sensors."
+    placeholder="e.g., Create a lesson plan and Python code for an autonomous robot using ultrasonic sensors."
 )
 
-if st.button("🚀 Run Multi-Agent Robotics Session", type="primary"):
+if st.button("🚀 Run Robotics Consultation", type="primary"):
     if not groq_api_key:
         st.error("Please configure your Groq API Key first!")
     elif not user_query.strip():
         st.error("Please enter a query or topic!")
     else:
-        with st.spinner("🤖 CrewAI Agents are collaborating on your request... Please wait."):
+        with st.spinner("🤖 AI Agents are analyzing your request... Please wait."):
             try:
-                # Initialize Agents and Tasks
-                curr_agent, cod_agent, hw_agent = create_robotics_agents()
-                tasks = create_robotics_tasks(curr_agent, cod_agent, hw_agent, age_group, user_query)
-
-                # Create Crew
-                crew = Crew(
-                    agents=[curr_agent, cod_agent, hw_agent],
-                    tasks=tasks,
-                    process=Process.sequential,
-                    verbose=True
-                )
-
-                # Kickoff Crew Execution
-                result = crew.kickoff()
-
-                st.success("🎉 Multi-Agent Analysis Complete!")
+                result = run_robotics_consultation(age_group, user_query)
+                st.success("🎉 Analysis Complete!")
                 st.markdown("### 📋 Expert Response & Output:")
-                st.markdown(str(result))
-
+                st.markdown(result)
             except Exception as e:
                 st.error(f"An error occurred during execution: {e}")
