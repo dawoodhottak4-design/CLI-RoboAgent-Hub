@@ -1,5 +1,6 @@
 streamlit>=1.38.0
 setuptools>=65.0.0
+wheel>=0.40.0
 crewai==0.80.0
 crewai-tools==0.17.0
 duckduckgo-search>=5.3.1
